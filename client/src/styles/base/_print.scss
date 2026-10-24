@@ -1,0 +1,42 @@
+/* Crisp A4 PDF export via the browser's print dialog ("Save as PDF"). */
+.print-area {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+  }
+  .print-area .rv {
+    width: 210mm;
+    min-height: 297mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .chat-fab,
+  .chat,
+  .nav,
+  .footer,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+}

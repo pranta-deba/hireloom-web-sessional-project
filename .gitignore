@@ -1,0 +1,28 @@
+# Dependencies (প্যাকেজ ফাইল)
+node_modules/
+
+# Environment Variables (গোপন তথ্য)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Build Outputs (প্রোডাকশন ফাইল)
+dist/
+build/
+/client/dist/
+
+# Logs (লগ ফাইল)
+logs
+*.log
+npm-debug.log*
+
+# OS Generated Files (অপারেটিং সিস্টেমের অপ্রয়োজনীয় ফাইল)
+.DS_Store
+Thumbs.db
+
+# Editor / IDE (কোড এডিটরের কনফিগারেশন)
+.vscode/
+.idea/

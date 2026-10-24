@@ -1,0 +1,415 @@
+@use '../abstracts' as *;
+
+/* ───────── Auth ───────── */
+.auth {
+  display: grid;
+  min-height: calc(100vh - 90px);
+  padding: 10px 12px 40px;
+  gap: 12px;
+  @include up($bp-lg) {
+    grid-template-columns: 0.9fr 1.1fr;
+    padding: 10px 20px 40px;
+  }
+
+  &__panel {
+    position: relative;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 22px;
+    padding: 46px;
+    border-radius: $radius-xl;
+    background: #12162b;
+    color: #fff;
+    @include up($bp-lg) {
+      display: flex;
+    }
+    .wordmark {
+      position: absolute;
+      top: 40px;
+      left: 46px;
+      color: #fff;
+    }
+    h2 {
+      font-size: clamp(2.6rem, 4vw, 3.8rem);
+      position: relative;
+      em {
+        color: #ffb59c;
+      }
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 12px;
+      position: relative;
+      li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #c9cde0;
+        &::before {
+          content: '';
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2393A5FF' stroke-width='3'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center / 12px no-repeat;
+          flex-shrink: 0;
+        }
+      }
+    }
+  }
+  &__orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.75;
+    &--a {
+      width: 360px;
+      height: 360px;
+      background: #3d55ff;
+      top: -80px;
+      right: -60px;
+    }
+    &--b {
+      width: 280px;
+      height: 280px;
+      background: #ff6a3d;
+      bottom: 30%;
+      left: -80px;
+      opacity: 0.45;
+    }
+  }
+  &__main {
+    @include flex-center;
+    padding: 20px 0;
+  }
+  &__card {
+    width: 100%;
+    max-width: 480px;
+    h1 {
+      font-family: $font-display;
+      font-weight: 400;
+      font-size: 2.8rem;
+      margin-bottom: 6px;
+    }
+    > p.muted {
+      margin-bottom: 24px;
+    }
+  }
+  &__alt {
+    margin-top: 26px;
+    text-align: center;
+    font-size: 0.92rem;
+    color: var(--ink-2);
+  }
+  &__demo {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 0.76rem;
+    color: var(--muted);
+    line-height: 2;
+  }
+}
+
+.socials {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+.social-btn {
+  height: 50px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-weight: 650;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  &:hover:not(:disabled) {
+    border-color: var(--ink);
+    transform: translateY(-2px);
+  }
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.stepper {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 22px;
+  i {
+    flex: 1;
+    height: 4px;
+    border-radius: 9px;
+    background: var(--line);
+    transition: background 0.4s;
+    &.is-done {
+      background: var(--mint);
+    }
+    &.is-active {
+      background: var(--brand);
+    }
+  }
+}
+
+/* ───────── Dashboard ───────── */
+.dash {
+  padding-top: 26px;
+  padding-bottom: 60px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      margin: 4px 0;
+    }
+  }
+  &__top {
+    display: grid;
+    gap: 18px;
+    @include up($bp-lg) {
+      grid-template-columns: 1.4fr 1fr;
+    }
+  }
+  &__stats {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.stat-card {
+  position: relative;
+  padding: 22px;
+  border-radius: $radius-lg;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 2px;
+  transition: transform 0.35s $ease, box-shadow 0.35s;
+  &__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--brand-soft);
+    color: var(--brand-ink);
+    @include flex-center;
+    margin-bottom: 10px;
+  }
+  strong {
+    font-size: 2.6rem;
+    line-height: 1;
+  }
+  small {
+    color: var(--muted);
+  }
+  .badge {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+  }
+}
+.session-card {
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  dl {
+    margin: 0;
+    display: grid;
+    gap: 2px;
+    > div {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px dashed var(--line);
+      font-size: 0.85rem;
+      &:last-child {
+        border: 0;
+      }
+    }
+  }
+  dt {
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  dd {
+    margin: 0;
+    font-weight: 650;
+    text-align: right;
+    word-break: break-all;
+  }
+}
+.tabs .tab-link {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  &:hover {
+    color: var(--ink);
+  }
+}
+.new-card {
+  min-height: 360px;
+  border-radius: $radius-lg;
+  border: 2px dashed var(--line-strong);
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  transition: all 0.3s $ease;
+  > svg {
+    width: 64px;
+    height: 64px;
+    padding: 18px;
+    border-radius: 20px;
+    background: var(--brand-soft);
+    color: var(--brand-ink);
+    margin-bottom: 10px;
+    transition: transform 0.4s $ease-spring;
+  }
+  small {
+    color: var(--muted);
+  }
+  &:hover {
+    border-color: var(--brand);
+    color: var(--ink);
+    > svg {
+      transform: rotate(90deg) scale(1.08);
+    }
+  }
+  &--ai > svg {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  &--ai:hover {
+    border-color: var(--accent);
+    > svg {
+      transform: rotate(-12deg) scale(1.1);
+    }
+  }
+}
+.doc-card {
+  border-radius: $radius-lg;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  transition: transform 0.35s $ease, box-shadow 0.35s;
+  &__preview {
+    display: block;
+    height: 280px;
+    overflow: hidden;
+    padding: 16px 16px 0;
+    background: var(--bg-2);
+  }
+  &__body {
+    padding: 12px 12px 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    strong {
+      display: block;
+      @include truncate;
+    }
+    small {
+      color: var(--muted);
+      font-size: 0.76rem;
+      @include truncate;
+      display: block;
+    }
+  }
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+  }
+}
+
+/* ───────── Profile settings ───────── */
+.settings {
+  padding-bottom: 60px;
+  &__grid {
+    display: grid;
+    gap: 22px;
+    @include up($bp-lg) {
+      grid-template-columns: 1fr 340px;
+      align-items: start;
+    }
+  }
+  &__images {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    @include down($bp-sm) {
+      flex-direction: column;
+      align-items: stretch;
+      .uploader--round {
+        align-self: center;
+      }
+    }
+  }
+}
+
+.profile {
+  padding-bottom: 60px;
+  &__cover {
+    height: 240px;
+    border-radius: $radius-xl;
+    background-size: cover;
+    background-position: center;
+    margin-top: 10px;
+  }
+  &__head {
+    display: flex;
+    gap: 22px;
+    align-items: flex-end;
+    margin: -52px 0 20px 28px;
+    flex-wrap: wrap;
+    .avatar {
+      border-width: 5px;
+    }
+    h1 {
+      font-size: 2.6rem;
+    }
+    > div {
+      padding-bottom: 6px;
+    }
+    .row span,
+    .row a {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+  }
+  &__bio {
+    max-width: 720px;
+    font-size: 1.05rem;
+    color: var(--ink-2);
+    margin-bottom: 20px;
+  }
+}

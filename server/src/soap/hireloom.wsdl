@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="HireLoomService"
+  targetNamespace="http://hireloom.dev/soap"
+  xmlns="http://schemas.xmlsoap.org/wsdl/"
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:tns="http://hireloom.dev/soap"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <types>
+    <xsd:schema targetNamespace="http://hireloom.dev/soap" elementFormDefault="qualified">
+      <xsd:element name="GetAtsScoreRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="resumeText" type="xsd:string"/>
+            <xsd:element name="jobDescription" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetAtsScoreResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="score" type="xsd:int"/>
+            <xsd:element name="grade" type="xsd:string"/>
+            <xsd:element name="matchedKeywords" type="xsd:string"/>
+            <xsd:element name="missingKeywords" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetSiteStatsRequest">
+        <xsd:complexType><xsd:sequence/></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="GetSiteStatsResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="users" type="xsd:int"/>
+            <xsd:element name="blogs" type="xsd:int"/>
+            <xsd:element name="resumes" type="xsd:int"/>
+            <xsd:element name="templates" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </types>
+
+  <message name="GetAtsScoreInput"><part name="parameters" element="tns:GetAtsScoreRequest"/></message>
+  <message name="GetAtsScoreOutput"><part name="parameters" element="tns:GetAtsScoreResponse"/></message>
+  <message name="GetSiteStatsInput"><part name="parameters" element="tns:GetSiteStatsRequest"/></message>
+  <message name="GetSiteStatsOutput"><part name="parameters" element="tns:GetSiteStatsResponse"/></message>
+
+  <portType name="HireLoomPortType">
+    <operation name="GetAtsScore">
+      <input message="tns:GetAtsScoreInput"/>
+      <output message="tns:GetAtsScoreOutput"/>
+    </operation>
+    <operation name="GetSiteStats">
+      <input message="tns:GetSiteStatsInput"/>
+      <output message="tns:GetSiteStatsOutput"/>
+    </operation>
+  </portType>
+
+  <binding name="HireLoomBinding" type="tns:HireLoomPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="GetAtsScore">
+      <soap:operation soapAction="http://hireloom.dev/soap/GetAtsScore"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="GetSiteStats">
+      <soap:operation soapAction="http://hireloom.dev/soap/GetSiteStats"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <service name="HireLoomService">
+    <port name="HireLoomPort" binding="tns:HireLoomBinding">
+      <soap:address location="http://localhost:5000/soap/hireloom"/>
+    </port>
+  </service>
+</definitions>

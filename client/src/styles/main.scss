@@ -1,0 +1,15 @@
+// HireLoom design system — SASS architecture (7-1 inspired)
+// abstracts → base → layout → components → pages
+
+@use 'base/tokens';
+@use 'base/base';
+@use 'base/print';
+@use 'layout/layout';
+@use 'components/ui';
+@use 'components/widgets';
+@use 'components/resume';
+@use 'pages/home';
+@use 'pages/blog';
+@use 'pages/tools';
+@use 'pages/account';
+@use 'pages/admin';

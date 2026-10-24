@@ -1,0 +1,773 @@
+@use '../abstracts' as *;
+
+/* ───────── Template page extras ───────── */
+.sample-card {
+  border-radius: $radius-lg;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  transition: transform 0.4s $ease, box-shadow 0.4s;
+  &__preview {
+    display: block;
+    height: 300px;
+    overflow: hidden;
+    padding: 16px 16px 0;
+    background: var(--bg-2);
+  }
+  &__body {
+    padding: 14px 16px 16px;
+    strong {
+      display: block;
+    }
+    small {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+  }
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+  }
+}
+.preview-frame {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* ───────── Résumé builder ───────── */
+.builder {
+  padding-bottom: 60px;
+
+  &__top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    padding-bottom: 16px;
+  }
+  &__title {
+    font-family: $font-display;
+    font-size: 1.7rem;
+    border: 0;
+    background: transparent;
+    min-width: 0;
+    flex: 1 1 200px;
+    max-width: 420px;
+    padding: 4px 8px;
+    border-radius: 10px;
+    &:hover,
+    &:focus {
+      background: var(--surface);
+      outline: none;
+    }
+  }
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 650;
+    color: var(--muted);
+    &.is-saved {
+      color: var(--mint);
+    }
+    &.is-error {
+      color: var(--danger);
+    }
+  }
+  &__actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  &__tpl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    .select {
+      height: 36px;
+      font-size: 0.85rem;
+      max-width: 210px;
+    }
+  }
+  &__color input {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    background: var(--surface);
+    cursor: pointer;
+  }
+
+  &__switch {
+    margin-bottom: 14px;
+    @include up($bp-lg) {
+      display: none;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    gap: 24px;
+    @include up($bp-lg) {
+      grid-template-columns: minmax(380px, 0.9fr) minmax(0, 1.1fr);
+      align-items: start;
+    }
+    @include down($bp-lg) {
+      &.show-edit .builder__preview {
+        display: none;
+      }
+      &.show-preview .builder__editor {
+        display: none;
+      }
+    }
+  }
+  &__editor {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: $radius-lg;
+    overflow: hidden;
+  }
+  &__demo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--brand-soft);
+    color: var(--brand-ink);
+    flex-wrap: wrap;
+    p {
+      font-size: 0.85rem;
+    }
+    > div {
+      flex: 1;
+      min-width: 200px;
+    }
+  }
+  &__nav {
+    display: flex;
+    gap: 2px;
+    padding: 8px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
+    @include scrollbar;
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-size: 0.84rem;
+      font-weight: 650;
+      color: var(--ink-2);
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s;
+      small {
+        background: var(--line);
+        border-radius: 99px;
+        padding: 0 7px;
+        font-size: 0.7rem;
+      }
+      &:hover {
+        color: var(--ink);
+      }
+      &.is-active {
+        background: var(--surface);
+        color: var(--brand);
+        box-shadow: var(--shadow-sm);
+      }
+    }
+  }
+  &__panel {
+    border: 0;
+    margin: 0;
+    padding: 22px;
+    min-width: 0;
+    &:disabled {
+      cursor: pointer;
+    }
+  }
+  &__photo {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    @include down($bp-sm) {
+      flex-direction: column;
+      align-items: stretch;
+      .uploader--round {
+        align-self: center;
+      }
+    }
+  }
+  &__preview {
+    position: sticky;
+    top: 90px;
+    background: var(--bg-2);
+    border-radius: $radius-lg;
+    padding: 18px;
+    max-height: calc(100vh - 110px);
+    overflow: auto;
+    @include scrollbar;
+  }
+  &__zoom {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+  }
+  &__paper {
+    margin: 0 auto;
+    box-shadow: var(--shadow-lg);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: width 0.3s $ease;
+    max-width: none;
+  }
+  .textarea.is-streaming {
+    border-color: var(--brand);
+    background: var(--brand-soft);
+  }
+}
+.hide-sm {
+  @include down($bp-sm) {
+    display: none;
+  }
+}
+
+.list-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  &__item {
+    border: 1px solid var(--line);
+    border-radius: $radius;
+    padding: 14px 16px 18px;
+    background: var(--surface-2);
+    animation: pop-in 0.3s $ease;
+  }
+  &__bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    strong {
+      font-size: 0.9rem;
+      @include truncate;
+    }
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      &:disabled {
+        opacity: 0.3;
+      }
+    }
+  }
+}
+
+.view-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 30px 0 24px;
+  h1 {
+    font-family: $font-display;
+    font-weight: 400;
+    font-size: 2.4rem;
+    margin: 6px 0;
+  }
+}
+.view-paper {
+  max-width: 860px;
+  margin: 0 auto;
+  box-shadow: var(--shadow-lg);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* ───────── Wizard ───────── */
+.wizard {
+  max-width: 820px;
+  margin: 0 auto;
+  border-radius: $radius-xl;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
+
+  &__steps {
+    list-style: none;
+    margin: 0;
+    padding: 18px 22px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-2);
+    li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 650;
+      color: var(--muted);
+      white-space: nowrap;
+      padding-right: 14px;
+      span {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 1.5px solid var(--line-strong);
+        @include flex-center;
+        font-size: 0.75rem;
+      }
+      &.is-active {
+        color: var(--ink);
+        span {
+          background: var(--ink);
+          color: var(--bg);
+          border-color: var(--ink);
+        }
+      }
+      &.is-done span {
+        background: var(--mint);
+        color: #fff;
+        border-color: var(--mint);
+      }
+    }
+  }
+  &__body {
+    padding: 28px;
+  }
+  &__foot {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 28px;
+  }
+  &__busy {
+    padding: 70px 24px;
+    text-align: center;
+    h3 {
+      font-size: 2rem;
+    }
+  }
+}
+.review-list {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  > div {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  dt {
+    @include eyebrow;
+  }
+  dd {
+    margin: 0;
+  }
+}
+
+/* ───────── ATS ───────── */
+.ats {
+  display: grid;
+  gap: 24px;
+  @include up($bp-lg) {
+    grid-template-columns: 0.9fr 1.1fr;
+    align-items: start;
+  }
+  &__input {
+    @include up($bp-lg) {
+      position: sticky;
+      top: 100px;
+    }
+  }
+  &__placeholder {
+    text-align: center;
+    padding: 60px 30px;
+    h3 {
+      font-size: 2rem;
+      margin: 20px 0 10px;
+    }
+  }
+  &__ghost-ring {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+    border-radius: 50%;
+    border: 12px solid var(--line);
+    @include flex-center;
+    font-size: 2.4rem;
+    color: var(--muted);
+    border-top-color: var(--brand);
+    animation: spin 6s linear infinite;
+  }
+  &__score {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    flex-wrap: wrap;
+  }
+}
+.ring {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  svg {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+  }
+  circle {
+    fill: none;
+    stroke-width: 14;
+  }
+  .ring-bg {
+    stroke: var(--bg-2);
+  }
+  .ring-fg {
+    stroke-linecap: round;
+  }
+  &__label {
+    position: absolute;
+    inset: 0;
+    @include flex-center;
+    flex-direction: column;
+    .ring-num {
+      font-size: 3.4rem;
+      line-height: 1;
+    }
+    small {
+      color: var(--muted);
+      font-family: $font-mono;
+    }
+  }
+}
+.dropzone {
+  border: 2px dashed var(--line-strong);
+  border-radius: $radius-lg;
+  padding: 40px 20px;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.25s;
+  background: var(--surface-2);
+  > svg {
+    font-size: 2.2rem;
+    color: var(--brand);
+    margin-bottom: 6px;
+  }
+  small {
+    color: var(--muted);
+  }
+  &:hover,
+  &.is-drag {
+    border-color: var(--brand);
+    background: var(--brand-soft);
+  }
+  &.has-file {
+    border-style: solid;
+    border-color: var(--mint);
+    > svg {
+      color: var(--mint);
+    }
+  }
+}
+.breakdown {
+  display: grid;
+  gap: 18px;
+  > div {
+    display: grid;
+    gap: 6px;
+  }
+  strong {
+    font-size: 0.9rem;
+  }
+}
+.kw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 11px;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 650;
+  }
+  &__ok {
+    background: var(--mint-soft);
+    color: var(--mint);
+  }
+  &__miss {
+    background: var(--danger-soft);
+    color: var(--danger);
+  }
+}
+
+/* ───────── Cover letter studio ───────── */
+.studio {
+  display: grid;
+  gap: 24px;
+  @include up($bp-lg) {
+    grid-template-columns: 0.85fr 1.15fr;
+    align-items: start;
+  }
+  &__out {
+    @include up($bp-lg) {
+      position: sticky;
+      top: 100px;
+    }
+  }
+  &__ph {
+    text-align: center;
+    padding: 50px 20px;
+    > svg {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      color: var(--brand);
+    }
+  }
+}
+.letter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  h4 {
+    font-size: 1rem;
+  }
+  p {
+    color: var(--ink-2);
+    font-size: 0.86rem;
+    @include truncate(4);
+    white-space: pre-line;
+  }
+}
+
+/* ───────── AI Lab ───────── */
+.lab {
+  display: grid;
+  gap: 24px;
+  @include up($bp-lg) {
+    grid-template-columns: 1.3fr 1fr;
+    align-items: start;
+  }
+  &__screen {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: $radius;
+    overflow: hidden;
+    background: #0d0f14;
+    video,
+    img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.4s;
+      &.is-on {
+        opacity: 1;
+      }
+    }
+    img {
+      object-fit: contain;
+    }
+  }
+  &__idle {
+    position: absolute;
+    inset: 0;
+    @include flex-center;
+    flex-direction: column;
+    gap: 12px;
+    color: #8a8f99;
+    text-align: center;
+    padding: 20px;
+    svg {
+      font-size: 2.6rem;
+      color: #7088ff;
+    }
+  }
+  &__hud {
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    padding: 6px 12px;
+    border-radius: 99px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  &__stages {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 10px;
+    li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      > span {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1.5px solid var(--line-strong);
+        @include flex-center;
+        font-size: 0.72rem;
+      }
+      &.is-active {
+        color: var(--ink);
+      }
+      &.is-done {
+        color: var(--ink);
+        > span {
+          background: var(--mint);
+          border-color: var(--mint);
+          color: #fff;
+        }
+      }
+    }
+  }
+  &__facts {
+    display: grid;
+    gap: 8px;
+    font-size: 0.86rem;
+    div {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+  }
+}
+.preds {
+  display: grid;
+  gap: 14px;
+  &__row {
+    display: grid;
+    gap: 6px;
+    strong {
+      font-size: 0.9rem;
+      text-transform: capitalize;
+    }
+    &.is-top .progress > span {
+      background: var(--mint);
+    }
+  }
+}
+
+/* ───────── Contact & map ───────── */
+.contact {
+  display: grid;
+  gap: 24px;
+  @include up($bp-lg) {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  &__cards {
+    display: grid;
+    gap: 12px;
+    @include up($bp-sm) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .card {
+      display: grid;
+      gap: 4px;
+      padding: 18px;
+      > svg {
+        color: var(--brand);
+        font-size: 1.2rem;
+        margin-bottom: 4px;
+      }
+      small {
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+      strong {
+        font-size: 0.86rem;
+        word-break: break-word;
+      }
+    }
+  }
+}
+.map {
+  padding: 0;
+  overflow: hidden;
+  &__bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  iframe {
+    width: 100%;
+    height: 400px;
+    border: 0;
+    filter: saturate(0.9);
+  }
+  &__info {
+    padding: 10px 14px;
+    font-size: 0.74rem;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* ───────── Developer playground ───────── */
+.dev {
+  padding-bottom: 60px;
+  &__grid {
+    display: grid;
+    gap: 20px;
+    @include up($bp-lg) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  &__code {
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  &__out {
+    margin: 0;
+    background: #0f1116;
+    color: #d6dae3;
+    border-radius: 14px;
+    padding: 16px;
+    font-family: $font-mono;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    max-height: 520px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    @include scrollbar;
+    &--empty {
+      color: #6f7581;
+      min-height: 200px;
+    }
+  }
+}
