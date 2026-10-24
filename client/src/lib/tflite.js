@@ -63,8 +63,11 @@ export async function createClassifier({ modelUrl, labelsUrl, wasmPath }) {
       const tensor = Array.isArray(res) ? res[0] : res.dataSync ? res : Object.values(res)[0];
       let probs = tf.squeeze(tensor);
       if (probs.dtype !== 'float32') probs = tf.div(tf.cast(probs, 'float32'), 255);
-      const max = probs.max().dataSync()[0];
-      const min = probs.min().dataSync()[0];
+      // const max = probs.max().dataSync()[0];
+      // const min = probs.min().dataSync()[0];
+      const max = tf.max(probs).dataSync()[0]; 
+      const min = tf.min(probs).dataSync()[0];
+      
       if (max > 1 || min < 0) probs = tf.softmax(probs);
       return probs.dataSync();
     });
