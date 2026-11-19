@@ -44,7 +44,7 @@ npm run dev                  # API :5000 + Web :5173
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
-**ঐচ্ছিক ডিফল্ট** (`AI_PROVIDER`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `IMGBB_API_KEY`, `GITHUB_CLIENT_ID/SECRET`, `FIREBASE_*`, `SMTP_*`) — চাইলে `.env`-এ দিতে পারেন, তবে প্রস্তাবিত পথ হলো Dashboard থেকে দেওয়া।
+**ঐচ্ছিক ডিফল্ট** (`GEMINI_API_KEY`, `GEMINI_MODEL`, `IMGBB_API_KEY`, `GITHUB_CLIENT_ID/SECRET`, `FIREBASE_*`, `SMTP_*`) — চাইলে `.env`-এ দিতে পারেন, তবে প্রস্তাবিত পথ হলো Dashboard থেকে দেওয়া।
 
 > **MongoDB Atlas:** Network Access → `0.0.0.0/0` (বা আপনার সার্ভারের IP) allow করুন; Database Access-এ একজন user তৈরি করুন; পাসওয়ার্ডে বিশেষ চিহ্ন থাকলে URL-encode করুন।
 
@@ -79,20 +79,20 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ### B4. GitHub লগইন
 1. https://github.com/settings/applications/new
 2. **Homepage URL:** `http://localhost:5173` (প্রোডাকশনে আপনার ডোমেইন)
-3. **Authorization callback URL:** Dashboard-এর GitHub ট্যাবে দেখানো URL কপি করুন — ডিফল্ট `CLIENT_URL/api/auth/github/callback` (যেমন `http://localhost:5173/api/auth/github/callback`)
+3. **Authorization callback URL:** হুবহু `http://localhost:5173/api/auth/github/callback` (Dashboard-এর GitHub ট্যাবে কপি বাটন আছে)। `localhost` ≠ `127.0.0.1`, পোর্ট `5173` (5000 নয়), শেষে `/` নয়।
+   > “The redirect_uri is not associated with this application” এরর এই URL না মিললেই আসে। নতুন কোডে ডিফল্টভাবে redirect_uri পাঠানো হয় না — GitHub app-এ যে callback রেজিস্টার করা আছে সেটাই ব্যবহার হয় — তবুও ওপরের URL-টাই রেজিস্টার করুন।
 4. **Client ID** ও **Generate a new client secret** → Dashboard-এ বসান → **Enable GitHub sign-in** অন → Save
 
 বিকল্প: Firebase ট্যাবে “Use Firebase for GitHub sign-in” অন করলে GitHub-ও Firebase দিয়ে চলবে (তখন GitHub OAuth app-এর callback হবে Firebase-এর দেওয়া URL)।
 
-### B5. AI Provider (Chatbot, Cover Letter, ATS Coach, Résumé Generator)
-| Provider | কোথায় key পাবেন | মডেল উদাহরণ |
-|---|---|---|
-| **Offline demo** | key লাগবে না — সব ফিচার ডেমো আউটপুটে চলে | — |
-| **OpenAI** | https://platform.openai.com/api-keys | `gpt-4o-mini` |
-| **Google Gemini** (ফ্রি টিয়ার) | https://aistudio.google.com/apikey | `gemini-2.0-flash` |
-| **OpenAI-compatible** | Groq: `https://api.groq.com/openai/v1` · OpenRouter: `https://openrouter.ai/api/v1` · Ollama (লোকাল): `http://localhost:11434/v1` | `llama-3.3-70b-versatile` ইত্যাদি |
+### B5. AI — শুধুমাত্র Google Gemini (Chatbot, Cover Letter, ATS Coach, Résumé Generator, স্ক্যান করা PDF পড়া)
+1. https://aistudio.google.com/apikey থেকে ফ্রি key নিন
+2. Dashboard → Settings → **Gemini AI** → key বসান → Preferred model (ডিফল্ট `gemini-3.8-flash`, ড্রপডাউনে আপনার key-এর সব মডেল দেখাবে)
+3. **Save & test connection**
 
-Provider সিলেক্ট → key + model → **Save & test connection**। এখান থেকেই temperature, max tokens এবং তিনটি system prompt (résumé writer, cover letter, ATS coach) কাস্টমাইজ করা যায়। সব AI রেসপন্স **WebSocket দিয়ে টোকেন-বাই-টোকেন** স্ট্রিম হয়।
+**অটো-ফলব্যাক:** Google কোনো মডেল বন্ধ করলে (404) বা ভিড়ে 503/টাইমআউট দিলে HireLoom নিজে থেকেই পরের উপলব্ধ Gemini flash / flash-lite মডেলে চলে যায়; বন্ধ মডেল স্থায়ীভাবে বাদ পড়ে, ব্যস্ত মডেল ৯০ সেকেন্ড বিশ্রামে থাকে। পুরোনো `gemini-2.0/2.5` সেটিং স্বয়ংক্রিয়ভাবে আপগ্রেড হয়। key না দিলে সাইট অফলাইন ডেমো মোডে চলে।
+
+temperature, max tokens এবং তিনটি system prompt এখান থেকেই কাস্টমাইজ করা যায়। সব AI রেসপন্স **WebSocket দিয়ে টোকেন-বাই-টোকেন** স্ট্রিম হয়।
 
 ### B6. Chatbot
 চালু/বন্ধ, নাম, গ্রিটিং, system prompt (ব্যক্তিত্ব ও নিয়ম), কতগুলো আগের মেসেজ মনে রাখবে, এবং suggested questions (যোগ/মুছুন)।
@@ -170,7 +170,8 @@ location / {
 | `Failed to start server … ECONNREFUSED` | MongoDB চলছে না বা `MONGO_URI` ভুল |
 | OTP ইমেইল আসছে না | Settings → Email → Enable অন? Gmail-এ সাধারণ পাসওয়ার্ড নয়, **App Password** দিন; Send SMTP test চালান |
 | Google লগইনে `unauthorized-domain` | Firebase → Authorized domains-এ ডোমেইন যোগ করুন |
-| GitHub লগইনে redirect mismatch | GitHub app-এর callback URL ঠিক Dashboard-এ দেখানো URL-এর মতো হতে হবে |
+| GitHub লগইনে redirect mismatch | GitHub app-এর callback URL হুবহু `http://localhost:5173/api/auth/github/callback` (প্রোডাকশনে `https://yourdomain.com/api/auth/github/callback`) |
+| AI: `model ... no longer available` / 503 | নতুন কোড স্বয়ংক্রিয়ভাবে অন্য Gemini মডেলে ফলব্যাক করে; Dashboard → Gemini AI → “Live fallback chain” দেখুন |
 | AI “Offline demo mode” দেখায় | Settings → AI provider-এ provider + key সেভ করুন |
 | `SETTINGS_ENCRYPTION_KEY` বদলানোর পর key কাজ করছে না | Dashboard-এ secret গুলো আবার দিন |
 | ছবি আপলোড ব্যর্থ | imgbb key যাচাই করুন; ৮ MB-এর ছোট PNG/JPG/WEBP দিন |

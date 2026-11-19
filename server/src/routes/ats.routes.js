@@ -3,7 +3,9 @@ import { AtsReport, Resume } from '../models/index.js';
 import { asyncHandler, ApiError, paginate, pageMeta } from '../utils/http.js';
 import { requireAuth } from '../middleware/auth.js';
 import { documentUpload } from '../middleware/upload.js';
-import { analyzeResume, extractText, resumeToText } from '../services/atsService.js';
+import { analyzeResume, extractText, resumeToText, geminiReadableMime } from '../services/atsService.js';
+import { completeChat } from '../services/aiService.js';
+import { getSettings, aiReady } from '../services/settingsService.js';
 
 const r = Router();
 r.use(requireAuth);
@@ -11,9 +13,28 @@ r.use(requireAuth);
 /** Upload PDF/DOCX/TXT → plain text. */
 r.post('/extract', documentUpload.single('file'), asyncHandler(async (req, res) => {
   if (!req.file) throw new ApiError(400, 'Attach a résumé file.');
-  const text = (await extractText(req.file)).replace(/\u0000/g, '').trim();
+  let text = (await extractText(req.file)).replace(/\u0000/g, '').trim();
+  let via = 'parser';
+  // Scanned PDF or image → let Gemini read the document itself.
+  const mime = geminiReadableMime(req.file);
+  if (text.length < 40 && mime && req.file.size <= 15 * 1024 * 1024 && aiReady(await getSettings())) {
+    try {
+      const out = await completeChat({
+        task: 'extract',
+        files: [{ mimeType: mime, data: req.file.buffer.toString('base64') }],
+        messages: [
+          { role: 'system', content: 'You transcribe résumé documents to plain text. Output only the document text in reading order, keeping section headings and bullet points. No commentary.' },
+          { role: 'user', content: 'Transcribe this résumé.' },
+        ],
+      });
+      text = out.replace(/```[a-z]*\n?|```/gi, '').trim();
+      via = 'gemini';
+    } catch (e) {
+      console.warn('[ats] Gemini OCR failed:', e.message);
+    }
+  }
   if (text.length < 40) throw new ApiError(422, 'Could not read text from this file. If it is a scanned image, paste the text instead.');
-  res.json({ text, fileName: req.file.originalname, words: text.split(/\s+/).length });
+  res.json({ text, fileName: req.file.originalname, words: text.split(/\s+/).length, via });
 }));
 
 /** Instant deterministic scoring — AI deep feedback streams separately over WebSocket. */

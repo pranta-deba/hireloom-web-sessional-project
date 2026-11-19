@@ -28,14 +28,10 @@ export const env = {
 /** Raw env values used as defaults beneath dashboard-managed settings. */
 export const envDefaults = {
   ai: {
-    provider: process.env.AI_PROVIDER || 'local',
-    openaiApiKey: process.env.OPENAI_API_KEY || '',
-    openaiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-    geminiApiKey: process.env.GEMINI_API_KEY || '',
-    geminiModel: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
-    compatibleBaseUrl: process.env.COMPATIBLE_BASE_URL || '',
-    compatibleApiKey: process.env.COMPATIBLE_API_KEY || '',
-    compatibleModel: process.env.COMPATIBLE_MODEL || '',
+    // Google Gemini is the only AI provider. Without a key the app runs in offline demo mode.
+    provider: 'gemini',
+    geminiApiKey: (process.env.GEMINI_API_KEY || '').trim(),
+    geminiModel: (process.env.GEMINI_MODEL || 'gemini-3.8-flash').trim(),
   },
   imgbb: { apiKey: process.env.IMGBB_API_KEY || '' },
   github: {

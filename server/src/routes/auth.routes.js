@@ -270,14 +270,32 @@ r.get('/github', asyncHandler(async (req, res) => {
   if (!github.enabled || !github.clientId || !github.clientSecret) return res.redirect(`${env.clientUrl}/login?error=${encodeURIComponent('GitHub sign-in is not configured yet.')}`);
   const state = crypto.randomBytes(16).toString('hex');
   req.session.githubState = state;
-  req.session.returnTo = typeof req.query.returnTo === 'string' && req.query.returnTo.startsWith('/') ? req.query.returnTo : '/dashboard';
-  const params = new URLSearchParams({ client_id: github.clientId, redirect_uri: github.callbackUrl, scope: github.scope || 'read:user user:email', state, allow_signup: 'true' });
+  req.session.returnTo = typeof req.query.returnTo === 'string' && req.query.returnTo.startsWith('/') && !req.query.returnTo.startsWith('//') ? req.query.returnTo : '/dashboard';
+  // By default redirect_uri is NOT sent: GitHub then uses the "Authorization callback URL" registered on the
+  // OAuth app, which avoids the "redirect_uri is not associated with this application" error caused by
+  // localhost vs 127.0.0.1, port 5000 vs 5173, http vs https or a trailing-slash mismatch.
+  const params = new URLSearchParams({ client_id: github.clientId.trim(), scope: github.scope || 'read:user user:email', state, allow_signup: 'true' });
+  if (github.sendRedirectUri) params.set('redirect_uri', github.callbackUrl.trim());
   req.session.save(() => res.redirect(`https://github.com/login/oauth/authorize?${params}`));
 }));
 
 r.get('/github/callback', asyncHandler(async (req, res) => {
+  try {
+    await githubCallback(req, res);
+  } catch (e) {
+    console.error('GitHub callback failed:', e.message);
+    if (!res.headersSent) res.redirect(`${env.clientUrl}/login?error=${encodeURIComponent('GitHub sign-in failed — please try again.')}`);
+  }
+}));
+
+async function githubCallback(req, res) {
   const fail = (m) => res.redirect(`${env.clientUrl}/login?error=${encodeURIComponent(m)}`);
   const { code, state } = req.query;
+  if (req.query.error) {
+    if (req.query.error === 'access_denied') return fail('GitHub sign-in was cancelled.');
+    if (req.query.error === 'redirect_uri_mismatch') return fail('GitHub callback URL mismatch — copy the callback URL from Admin → Settings → GitHub into your GitHub OAuth app.');
+    return fail(String(req.query.error_description || req.query.error));
+  }
   if (!code || !state || state !== req.session.githubState) return fail('GitHub sign-in expired. Please try again.');
   delete req.session.githubState;
   const { github } = await getSettings();
@@ -285,12 +303,14 @@ r.get('/github/callback', asyncHandler(async (req, res) => {
   const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ client_id: github.clientId, client_secret: github.clientSecret, code, redirect_uri: github.callbackUrl }),
+    body: JSON.stringify({ client_id: github.clientId.trim(), client_secret: github.clientSecret.trim(), code, ...(github.sendRedirectUri ? { redirect_uri: github.callbackUrl.trim() } : {}) }),
   });
   const token = await tokenRes.json().catch(() => ({}));
   if (!token.access_token) return fail(token.error_description || 'GitHub token exchange failed.');
   const gh = { Authorization: `Bearer ${token.access_token}`, 'User-Agent': 'HireLoom', Accept: 'application/vnd.github+json' };
-  const profile = await (await fetch('https://api.github.com/user', { headers: gh })).json();
+  const profileRes = await fetch('https://api.github.com/user', { headers: gh });
+  const profile = await profileRes.json().catch(() => ({}));
+  if (!profileRes.ok || !profile.id) return fail('Could not read your GitHub profile. Please try again.');
   let email = profile.email;
   if (!email) {
     const emails = await (await fetch('https://api.github.com/user/emails', { headers: gh })).json().catch(() => []);
@@ -324,7 +344,7 @@ r.get('/github/callback', asyncHandler(async (req, res) => {
   await startSession(req, user, 'github');
   if (created) sendWelcomeEmail(user).catch(() => {});
   res.redirect(`${env.clientUrl}${returnTo}${returnTo.includes('?') ? '&' : '?'}welcome=github`);
-}));
+}
 
 r.post('/logout', (req, res, next) => {
   const name = req.session?.cookie ? 'hl.sid' : null;

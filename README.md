@@ -45,7 +45,7 @@ Set `NODE_ENV=production`, `CLIENT_URL=https://your-domain` and `TRUST_PROXY=1` 
 | — | Résumé/CV templates + editor | `pages/Templates.jsx`, `pages/ResumeBuilder.jsx`, 6 layouts in `components/resume/ResumeRenderer.jsx` |
 | — | Generate new CV/résumé (AI) | `pages/AiGenerate.jsx` → `POST /api/resumes/generate` |
 | — | ATS checker | `pages/AtsChecker.jsx`, `server/services/atsService.js` (+ AI coach over WebSocket) |
-| — | Cover-letter builder (OpenAI / Gemini / any OpenAI-compatible / offline) | `pages/CoverLetter.jsx`, `server/services/aiService.js` |
+| — | Cover-letter builder (Google Gemini with automatic model fallback / offline demo) | `pages/CoverLetter.jsx`, `server/services/aiService.js` |
 | — | Tech blog with admin approval | `pages/WriteBlog.jsx` → status `pending` → `admin/AdminBlogs.jsx` approves → live on landing & journal |
 | 2 | Real-time comments without reload | `components/blog/CommentSection.jsx` + Socket.IO rooms (`blog:<id>`), typing indicator, replies, edit/delete |
 | 3 | Like / dislike with counts | Posts & comments, optimistic UI + live broadcast (`blog:reactions`) |
@@ -83,7 +83,7 @@ hireloom/
 │       ├── models/           # User, Template, Resume, CoverLetter, AtsReport, Blog, Comment, Rating, Visit, Setting…
 │       ├── middleware/       # auth (session), upload (multer), error
 │       ├── routes/           # auth, users, templates, resumes, cover-letters, ats, blogs, comments, admin, misc
-│       ├── services/         # settings (encrypted), ai (OpenAI/Gemini/compatible/offline), ats, mail, upload (imgbb)
+│       ├── services/         # settings (encrypted), ai (Google Gemini + auto-fallback / offline), ats, mail, upload (imgbb)
 │       ├── socket/           # real-time rooms + AI token streaming
 │       ├── graphql/          # schema + resolvers
 │       ├── soap/             # WSDL + service

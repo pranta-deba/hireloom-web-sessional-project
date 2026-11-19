@@ -55,7 +55,7 @@ export default function AiGenerate() {
         <h1 className="display">
           Five answers. <em>One complete draft.</em>
         </h1>
-        <p>Tell us the essentials — the AI writes structured, quantified content into a real template you can edit.{!config.ai.ready && ' (Running in offline demo mode until an AI provider is connected.)'}</p>
+        <p>Tell us the essentials — the AI writes structured, quantified content into a real template you can edit.{!config.ai.ready && ' (Running in offline demo mode until a Gemini API key is added.)'}</p>
       </section>
 
       <section className="container" style={{ paddingBottom: 60 }}>

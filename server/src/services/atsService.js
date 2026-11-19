@@ -139,21 +139,45 @@ export function analyzeResume(resumeText = '', jobDescription = '') {
   };
 }
 
-/** Extract plain text from an uploaded PDF / DOCX / TXT buffer. */
+/** Extract plain text from an uploaded PDF / DOCX / TXT buffer. Never throws a 500 for a bad file. */
 export async function extractText(file) {
   const ext = path.extname(file.originalname || '').toLowerCase();
+  const fail = (msg) => Object.assign(new Error(msg), { status: 422 });
   if (ext === '.pdf' || file.mimetype === 'application/pdf') {
-    const { default: pdf } = await import('pdf-parse/lib/pdf-parse.js');
-    const out = await pdf(file.buffer);
-    return out.text || '';
+    if (!file.buffer?.slice(0, 1024).toString('latin1').includes('%PDF')) throw fail('This file is not a valid PDF.');
+    try {
+      const { default: pdf } = await import('pdf-parse/lib/pdf-parse.js');
+      const out = await pdf(file.buffer);
+      return out.text || '';
+    } catch (e) {
+      if (/password/i.test(e?.message || e?.name || '')) throw fail('This PDF is password-protected. Remove the password and upload again.');
+      console.warn('[ats] pdf-parse failed:', e?.message || e);
+      return ''; // caller may fall back to Gemini document reading
+    }
   }
   if (ext === '.docx') {
-    const mammoth = await import('mammoth');
-    const out = await (mammoth.default || mammoth).extractRawText({ buffer: file.buffer });
-    return out.value || '';
+    try {
+      const mammoth = await import('mammoth');
+      const out = await (mammoth.default || mammoth).extractRawText({ buffer: file.buffer });
+      return out.value || '';
+    } catch (e) {
+      throw fail('Could not read this DOCX file. Re-save it in Word/Google Docs or upload a PDF.');
+    }
   }
+  if (ext === '.doc') throw fail('Legacy .doc files are not supported. Save as .docx or PDF and upload again.');
   if (['.txt', '.md'].includes(ext) || file.mimetype?.startsWith('text/')) return file.buffer.toString('utf8');
+  if (/^image\//.test(file.mimetype || '') || /\.(png|jpe?g|webp)$/.test(ext)) return ''; // OCR via Gemini
   throw Object.assign(new Error('Unsupported file type. Upload PDF, DOCX or TXT.'), { status: 400 });
+}
+
+/** MIME types Gemini can read directly (scanned PDFs, photos of a résumé). */
+export function geminiReadableMime(file) {
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  if (ext === '.pdf' || file.mimetype === 'application/pdf') return 'application/pdf';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  return null;
 }
 
 /** Flatten a stored resume document into text for scoring. */

@@ -70,7 +70,7 @@ export default function AtsChecker() {
       fd.append('file', f);
       const { data } = await api.post('/ats/extract', fd);
       setText(data.text);
-      toast.success(`Extracted ${data.words} words from ${data.fileName}`);
+      toast.success(`Extracted ${data.words} words from ${data.fileName}`, data.via === 'gemini' ? { description: 'Scanned document read by Gemini.' } : undefined);
     } catch (e) {
       toast.error(errMsg(e));
       setFile(null);
@@ -148,8 +148,8 @@ export default function AtsChecker() {
             >
               <FiUploadCloud />
               <strong>{file ? file.name : 'Drop your résumé here'}</strong>
-              <small>{busy === 'Reading file…' ? 'Extracting text…' : file ? `${text.split(/\s+/).length} words extracted · click to replace` : 'PDF, DOCX or TXT · up to 10 MB'}</small>
-              <input ref={fileInput} type="file" accept=".pdf,.docx,.txt" hidden onChange={(e) => e.target.files[0] && extract(e.target.files[0])} />
+              <small>{busy === 'Reading file…' ? 'Extracting text…' : file ? `${text.split(/\s+/).length} words extracted · click to replace` : 'PDF, DOCX, TXT or a photo · up to 10 MB'}</small>
+              <input ref={fileInput} type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp" hidden onChange={(e) => e.target.files[0] && extract(e.target.files[0])} />
             </div>
           )}
           {mode === 'paste' && <textarea className="textarea" rows={9} value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste the full text of your résumé…" onFocus={requireAuth(() => {}, 'Sign in to analyse your résumé')} />}

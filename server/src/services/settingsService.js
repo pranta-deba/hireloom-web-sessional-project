@@ -2,12 +2,11 @@ import { Setting } from '../models/index.js';
 import { env, envDefaults } from '../config/env.js';
 import { encrypt, decrypt, mask, isMasked } from '../utils/crypto.js';
 import { DEFAULT_WELCOME_HTML } from './mailTemplates.js';
+import { normalizeModel, DEFAULT_GEMINI_MODEL } from './geminiModels.js';
 
 /** Fields stored encrypted at rest and masked in the admin UI. */
 export const SECRET_PATHS = [
-  'ai.openaiApiKey',
   'ai.geminiApiKey',
-  'ai.compatibleApiKey',
   'imgbb.apiKey',
   'github.clientSecret',
   'mail.pass',
@@ -51,13 +50,14 @@ const DEFAULTS = () => ({
     enabled: false,
     ...envDefaults.github,
     callbackUrl: '',
+    sendRedirectUri: false,
     scope: 'read:user user:email',
   },
   imgbb: { ...envDefaults.imgbb, expiration: 0 },
   ai: {
     ...envDefaults.ai,
     temperature: 0.7,
-    maxTokens: 1400,
+    maxTokens: 2048,
     resumeSystemPrompt:
       'You are an expert career writer and certified professional resume writer. Produce concise, quantified, ATS-friendly content. Never invent employers or degrees the user did not provide.',
     coverLetterSystemPrompt:
@@ -147,6 +147,11 @@ export async function getSettings(force = false) {
   });
   const merged = deepMerge(DEFAULTS(), stored);
   if (!merged.github.callbackUrl) merged.github.callbackUrl = `${env.clientUrl}/api/auth/github/callback`;
+  // Gemini is the only provider; legacy OpenAI / compatible / local values are ignored.
+  merged.ai.provider = 'gemini';
+  merged.ai.geminiApiKey = String(merged.ai.geminiApiKey || '').trim();
+  merged.ai.geminiModel = normalizeModel(merged.ai.geminiModel) || DEFAULT_GEMINI_MODEL;
+  ['openaiApiKey', 'openaiModel', 'compatibleBaseUrl', 'compatibleApiKey', 'compatibleModel'].forEach((k) => delete merged.ai[k]);
   cache = merged;
   cacheAt = Date.now();
   return merged;
@@ -157,11 +162,7 @@ export function invalidateSettings() {
 }
 
 export function aiReady(s) {
-  const a = s.ai;
-  if (a.provider === 'openai') return !!a.openaiApiKey;
-  if (a.provider === 'gemini') return !!a.geminiApiKey;
-  if (a.provider === 'openai-compatible') return !!(a.compatibleBaseUrl && a.compatibleModel);
-  return false;
+  return !!s.ai?.geminiApiKey;
 }
 
 /** Safe subset for the browser — no secrets ever leave the server here. */
@@ -191,7 +192,7 @@ export async function getPublicSettings() {
         }
       : null,
     chatbot: { enabled: s.chatbot.enabled, name: s.chatbot.name, greeting: s.chatbot.greeting, suggestions: s.chatbot.suggestions },
-    ai: { provider: s.ai.provider, ready: aiReady(s) },
+    ai: { provider: aiReady(s) ? 'gemini' : 'local', ready: aiReady(s), model: s.ai.geminiModel },
     media: s.media,
     ml: s.ml,
     mailReady: !!(s.mail.enabled && s.mail.host && s.mail.user && s.mail.pass),
@@ -223,6 +224,7 @@ export async function updateSettings(partial) {
     }
   };
   walk(partial);
+  if (data.ai) ['provider', 'openaiApiKey', 'openaiModel', 'compatibleBaseUrl', 'compatibleApiKey', 'compatibleModel'].forEach((k) => delete data.ai[k]);
   doc.data = data;
   doc.markModified('data');
   await doc.save();

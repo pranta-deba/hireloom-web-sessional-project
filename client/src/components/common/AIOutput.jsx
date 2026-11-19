@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Markdown } from './index';
 import { cn } from '../../lib/utils';
 
-const PROVIDERS = { openai: 'OpenAI', gemini: 'Google Gemini', 'openai-compatible': 'Custom model', local: 'Offline demo' };
+const PROVIDERS = { gemini: 'Google Gemini', local: 'Offline demo' };
 
 /**
  * Professional AI response surface: connection state, shimmer while waiting,
@@ -13,7 +13,7 @@ const PROVIDERS = { openai: 'OpenAI', gemini: 'Google Gemini', 'openai-compatibl
 export default function AIOutput({ stream, title = 'AI response', onRegenerate, markdown = true, placeholder, children, editable, onEdit }) {
   const { status, text, error, provider, stop } = stream;
   const [copied, setCopied] = useState(false);
-  const steps = { connecting: 'Connecting to model…', streaming: 'Writing…', done: 'Complete', stopped: 'Stopped', error: 'Error', idle: 'Ready' };
+  const steps = { connecting: 'Connecting to Gemini…', streaming: 'Writing…', done: 'Complete', stopped: 'Stopped', error: 'Error', idle: 'Ready' };
 
   const copy = async () => {
     await navigator.clipboard.writeText(text);

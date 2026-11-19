@@ -12,7 +12,7 @@ const TABS = [
   ['features', 'Features', <FiToggleRight key="f" />],
   ['firebase', 'Firebase', <FaGoogle key="fb" />],
   ['github', 'GitHub', <FaGithub key="gh" />],
-  ['ai', 'AI provider', <FiCpu key="ai" />],
+  ['ai', 'Gemini AI', <FiCpu key="ai" />],
   ['chatbot', 'Chatbot', <FiMessageCircle key="cb" />],
   ['email', 'Email (SMTP)', <FiMail key="em" />],
   ['imgbb', 'imgbb', <FiImage key="ib" />],
@@ -119,6 +119,17 @@ export default function AdminSettings() {
   const [busy, setBusy] = useState('');
   const [testTo, setTestTo] = useState('');
   const [preview, setPreview] = useState('');
+  const [aiModels, setAiModels] = useState(null);
+
+  const loadModels = () =>
+    api
+      .get('/admin/settings/ai-models')
+      .then(({ data }) => setAiModels(data))
+      .catch(() => setAiModels({ configured: false, models: [], chain: [] }));
+
+  useEffect(() => {
+    if (tab === 'ai') loadModels();
+  }, [tab]);
 
   useEffect(() => {
     api.get('/admin/settings').then(({ data }) => {
@@ -165,7 +176,8 @@ export default function AdminSettings() {
     try {
       await save(['ai']);
       const { data } = await api.post('/admin/settings/test-ai');
-      toast.success(`${data.provider} responded in ${data.ms} ms`, { description: data.sample.slice(0, 140) });
+      toast.success(`Gemini (${data.model}) responded in ${data.ms} ms`, { description: data.sample.slice(0, 140) });
+      loadModels();
     } catch (e) {
       toast.error(errMsg(e));
     } finally {
@@ -279,7 +291,11 @@ export default function AdminSettings() {
             {tab === 'github' && (
               <>
                 <Guide
-                  steps={['GitHub → Settings → Developer settings → OAuth Apps → New OAuth App.', 'Homepage URL: your site URL. Authorization callback URL: copy the value below.', 'Generate a client secret and paste both values here.']}
+                  steps={[
+                    'GitHub → Settings → Developer settings → OAuth Apps → New OAuth App (or edit your existing app).',
+                    'Homepage URL: your site URL. Authorization callback URL: paste the value below EXACTLY (same host — localhost ≠ 127.0.0.1 — same port 5173, no trailing slash).',
+                    'Generate a client secret and paste both values here. In production, register a second OAuth app with your https domain.',
+                  ]}
                   link={['Create a GitHub OAuth app', 'https://github.com/settings/applications/new']}
                 />
                 <div className="field" style={{ marginBottom: 16 }}>
@@ -292,6 +308,7 @@ export default function AdminSettings() {
                   <Secret label="Client secret" value={s.github.clientSecret} onChange={up('github', 'clientSecret')} />
                   <Text label="Callback URL override" value={s.github.callbackUrl} onChange={up('github', 'callbackUrl')} mono span hint={`Default: ${env.githubCallbackDefault}`} />
                   <Text label="Scopes" value={s.github.scope} onChange={up('github', 'scope')} mono />
+                  <Toggle label="Send redirect_uri to GitHub (strict mode — leave OFF to always use the callback URL registered on your GitHub app)" checked={!!s.github.sendRedirectUri} onChange={up('github', 'sendRedirectUri')} />
                 </div>
                 <SaveBar sections={['github']} />
               </>
@@ -299,43 +316,44 @@ export default function AdminSettings() {
 
             {tab === 'ai' && (
               <>
-                <Guide steps={['Choose a provider. "Offline demo" works without any key.', 'OpenAI: platform.openai.com/api-keys · Gemini (free tier): aistudio.google.com/apikey.', 'OpenAI-compatible covers Groq, OpenRouter, Together, DeepSeek, or a local Ollama (http://localhost:11434/v1).']} />
+                <Guide
+                  steps={[
+                    'Create a free key at aistudio.google.com/apikey and paste it below.',
+                    'Pick a preferred model. If Google retires it or it is overloaded, HireLoom automatically falls back to the next available Gemini model — no downtime.',
+                    'Click “Save & test connection”. Without a key the site runs in offline demo mode.',
+                  ]}
+                  link={['Get a Gemini API key', 'https://aistudio.google.com/apikey']}
+                />
                 <div className="form-grid">
-                  <div className="field span-2">
-                    <label>Provider</label>
-                    <div className="provider-pick">
-                      {[
-                        ['local', 'Offline demo', 'No key needed'],
-                        ['openai', 'OpenAI', 'GPT-4o family'],
-                        ['gemini', 'Google Gemini', 'Generous free tier'],
-                        ['openai-compatible', 'OpenAI-compatible', 'Groq · OpenRouter · Ollama'],
-                      ].map(([k, l, d]) => (
-                        <button type="button" key={k} className={s.ai.provider === k ? 'is-active' : ''} onClick={() => up('ai', 'provider')(k)}>
-                          <strong>{l}</strong>
-                          <small>{d}</small>
-                        </button>
+                  <Secret label="Gemini API key" value={s.ai.geminiApiKey} onChange={up('ai', 'geminiApiKey')} span />
+                  <div className="field">
+                    <label>Preferred model</label>
+                    <input className="input mono" list="gemini-models" value={s.ai.geminiModel ?? ''} placeholder="gemini-3.8-flash" onChange={(e) => up('ai', 'geminiModel')(e.target.value.trim())} />
+                    <datalist id="gemini-models">
+                      {(aiModels?.models || []).map((m) => (
+                        <option key={m} value={m} />
                       ))}
-                    </div>
+                    </datalist>
+                    <span className="field__hint">
+                      {aiModels?.models?.length ? `${aiModels.models.length} text models available for this key.` : 'Save a valid key to load the model list.'}
+                    </span>
                   </div>
-                  {s.ai.provider === 'openai' && (
-                    <>
-                      <Secret label="OpenAI API key" value={s.ai.openaiApiKey} onChange={up('ai', 'openaiApiKey')} />
-                      <Text label="Model" value={s.ai.openaiModel} onChange={up('ai', 'openaiModel')} mono placeholder="gpt-4o-mini" />
-                    </>
-                  )}
-                  {s.ai.provider === 'gemini' && (
-                    <>
-                      <Secret label="Gemini API key" value={s.ai.geminiApiKey} onChange={up('ai', 'geminiApiKey')} />
-                      <Text label="Model" value={s.ai.geminiModel} onChange={up('ai', 'geminiModel')} mono placeholder="gemini-2.0-flash" />
-                    </>
-                  )}
-                  {s.ai.provider === 'openai-compatible' && (
-                    <>
-                      <Text label="Base URL" value={s.ai.compatibleBaseUrl} onChange={up('ai', 'compatibleBaseUrl')} mono placeholder="https://api.groq.com/openai/v1" span />
-                      <Secret label="API key" value={s.ai.compatibleApiKey} onChange={up('ai', 'compatibleApiKey')} hint="Optional for local servers such as Ollama." />
-                      <Text label="Model" value={s.ai.compatibleModel} onChange={up('ai', 'compatibleModel')} mono placeholder="llama-3.3-70b-versatile" />
-                    </>
-                  )}
+                  <div className="field">
+                    <label>Live fallback chain</label>
+                    <div className="input mono" style={{ height: 'auto', minHeight: 44, whiteSpace: 'normal', lineHeight: 1.6 }}>
+                      {aiModels?.chain?.length
+                        ? aiModels.chain.slice(0, 5).map((m, i) => (
+                            <span key={m}>
+                              {i > 0 && ' → '}
+                              {m}
+                              {aiModels.lastGood === m && ' ✓'}
+                              {aiModels.cooling?.includes(m) && ' (busy)'}
+                            </span>
+                          ))
+                        : '—'}
+                    </div>
+                    <span className="field__hint">✓ = last model that answered · (busy) = temporarily skipped after a 503/timeout.</span>
+                  </div>
                   <Text label="Temperature" type="number" value={s.ai.temperature} onChange={up('ai', 'temperature')} hint="0 = precise · 1 = creative" />
                   <Text label="Max tokens" type="number" value={s.ai.maxTokens} onChange={up('ai', 'maxTokens')} />
                   <Area label="Résumé writer system prompt" value={s.ai.resumeSystemPrompt} onChange={up('ai', 'resumeSystemPrompt')} rows={3} />

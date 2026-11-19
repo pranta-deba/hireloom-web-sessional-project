@@ -8,7 +8,7 @@ const FALLBACK = {
   features: {},
   auth: {},
   chatbot: { enabled: false },
-  ai: { provider: 'local', ready: false },
+  ai: { provider: 'local', ready: false, model: '' },
   media: { videos: [], audios: [] },
   ml: {},
 };

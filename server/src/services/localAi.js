@@ -2,7 +2,7 @@
  * Offline "demo brain" used until an AI provider is configured in the admin dashboard.
  * Output is deterministic but context-aware so every feature works end-to-end out of the box.
  */
-const NOTE = '\n\n> _Offline demo mode — connect OpenAI, Gemini or any OpenAI-compatible model in **Admin → Settings → AI** for fully generated answers._';
+const NOTE = '\n\n> _Offline demo mode — add a Google Gemini API key in **Admin → Settings → AI** for fully generated answers._';
 
 const pick = (arr, seed = 0) => arr[Math.abs(seed) % arr.length];
 const hash = (s = '') => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);

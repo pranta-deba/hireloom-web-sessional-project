@@ -32,6 +32,20 @@ import commentRoutes from './routes/comment.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import miscRoutes from './routes/misc.routes.js';
 
+/** Allowed browser origins: CLIENT_URL, plus localhost / LAN dev servers outside production. */
+export function corsOrigin(origin, cb) {
+  if (!origin || origin === env.clientUrl) return cb(null, true);
+  if (!env.isProd) {
+    try {
+      const { hostname } = new URL(origin);
+      if (/^(localhost|127\.0\.0\.1|\[::1\]|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/.test(hostname)) return cb(null, true);
+    } catch {
+      /* fall through */
+    }
+  }
+  return cb(null, false);
+}
+
 async function start() {
   await connectDB();
   await bootstrap();
@@ -47,7 +61,7 @@ async function start() {
       crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }, // Firebase Google popup
     })
   );
-  app.use(cors({ origin: env.clientUrl, credentials: true }));
+  app.use(cors({ origin: corsOrigin, credentials: true }));
   app.use(compression());
   app.use(morgan(env.isProd ? 'combined' : 'dev', { skip: (req) => req.url.startsWith('/socket.io') }));
 
@@ -103,7 +117,7 @@ async function start() {
   app.use(errorHandler);
 
   const server = http.createServer(app);
-  const io = initSocket(server, sessionMiddleware);
+  const io = initSocket(server, sessionMiddleware, corsOrigin);
   app.set('io', io);
 
   server.listen(env.port, () => {

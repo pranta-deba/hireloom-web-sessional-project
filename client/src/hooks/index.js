@@ -28,7 +28,7 @@ export function usePageTracking() {
  * status: idle → connecting → streaming → done | error | stopped
  */
 export function useAIStream() {
-  const { socket, connected } = useSocket();
+  const { socket } = useSocket();
   const [state, setState] = useState({ status: 'idle', text: '', error: null, provider: null });
   const current = useRef(null);
   const resolver = useRef(null);
@@ -50,11 +50,19 @@ export function useAIStream() {
       resolver.current?.reject(new Error(p.message));
       current.current = null;
     };
+    const onDrop = () => {
+      if (!current.current) return;
+      setState((s) => ({ ...s, status: s.text ? 'stopped' : 'error', error: s.text ? null : 'Connection to the server was lost. Please try again.' }));
+      resolver.current?.reject(new Error('disconnected'));
+      current.current = null;
+    };
+    socket.on('disconnect', onDrop);
     socket.on('ai:start', onStart);
     socket.on('ai:chunk', onChunk);
     socket.on('ai:done', onDone);
     socket.on('ai:error', onError);
     return () => {
+      socket.off('disconnect', onDrop);
       socket.off('ai:start', onStart);
       socket.off('ai:chunk', onChunk);
       socket.off('ai:done', onDone);
@@ -65,18 +73,33 @@ export function useAIStream() {
   const start = useCallback(
     (task, payload = {}) =>
       new Promise((resolve, reject) => {
-        if (!socket || !connected) {
-          setState({ status: 'error', text: '', error: 'Real-time connection unavailable. Retrying…', provider: null });
-          reject(new Error('Socket not connected'));
+        if (!socket) {
+          setState({ status: 'error', text: '', error: 'Real-time connection is starting — please try again in a moment.', provider: null });
+          reject(new Error('Socket not ready'));
           return;
         }
         const requestId = uid();
         current.current = requestId;
         resolver.current = { resolve, reject };
         setState({ status: 'connecting', text: '', error: null, provider: null });
-        socket.emit('ai:request', { requestId, task, ...payload });
+        const send = () => current.current === requestId && socket.emit('ai:request', { requestId, task, ...payload });
+        if (socket.connected) return send();
+        // Briefly wait for a (re)connecting socket instead of failing instantly.
+        socket.connect();
+        const giveUp = setTimeout(() => {
+          socket.off('connect', onConnect);
+          if (current.current !== requestId) return;
+          current.current = null;
+          setState({ status: 'error', text: '', error: 'Cannot reach the HireLoom server. Check that the API is running and try again.', provider: null });
+          reject(new Error('Socket not connected'));
+        }, 8000);
+        const onConnect = () => {
+          clearTimeout(giveUp);
+          send();
+        };
+        socket.once('connect', onConnect);
       }),
-    [socket, connected]
+    [socket]
   );
 
   const stop = useCallback(() => {

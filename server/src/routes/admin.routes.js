@@ -6,7 +6,8 @@ import { requireAdmin } from '../middleware/auth.js';
 import { getAdminSettings, updateSettings, getSettings } from '../services/settingsService.js';
 import { verifyTransport, sendMail, sendWelcomeEmail } from '../services/mailService.js';
 import { render } from '../services/mailTemplates.js';
-import { completeChat } from '../services/aiService.js';
+import { completeChat, geminiDiagnostics } from '../services/aiService.js';
+import { aiReady } from '../services/settingsService.js';
 import { serializeBlog } from './blog.routes.js';
 import { env } from '../config/env.js';
 import { ratingStats } from '../utils/ratings.js';
@@ -225,10 +226,17 @@ r.post('/settings/preview-welcome', asyncHandler(async (req, res) => {
 }));
 
 r.post('/settings/test-ai', asyncHandler(async (_req, res) => {
+  const s = await getSettings(true);
+  if (!aiReady(s)) throw new ApiError(400, 'Add your Gemini API key first (free at aistudio.google.com/apikey).');
   const started = Date.now();
   const text = await completeChat({ messages: [{ role: 'user', content: 'Reply with exactly: "HireLoom AI is connected." then one short career tip.' }] });
-  const s = await getSettings();
-  res.json({ ok: true, provider: s.ai.provider, ms: Date.now() - started, sample: text.slice(0, 400) });
+  const diag = await geminiDiagnostics();
+  res.json({ ok: true, provider: 'gemini', model: diag.lastGood || s.ai.geminiModel, ms: Date.now() - started, sample: text.slice(0, 400) });
+}));
+
+/** Models this Gemini key can use (for the admin model picker) + live health of the fallback chain. */
+r.get('/settings/ai-models', asyncHandler(async (_req, res) => {
+  res.json(await geminiDiagnostics());
 }));
 
 export default r;

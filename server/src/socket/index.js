@@ -2,7 +2,6 @@ import { Server } from 'socket.io';
 import { User, ChatThread, AtsReport } from '../models/index.js';
 import { streamChat } from '../services/aiService.js';
 import { getSettings } from '../services/settingsService.js';
-import { env } from '../config/env.js';
 
 /**
  * Real-time layer:
@@ -10,9 +9,9 @@ import { env } from '../config/env.js';
  *  • AI streaming (chatbot, cover letters, ATS feedback, summary rewrite) token-by-token
  *  • presence counter & admin notifications
  */
-export function initSocket(httpServer, sessionMiddleware) {
+export function initSocket(httpServer, sessionMiddleware, corsOrigin) {
   const io = new Server(httpServer, {
-    cors: { origin: env.clientUrl, credentials: true },
+    cors: { origin: corsOrigin, credentials: true },
     path: '/socket.io',
   });
 
@@ -66,7 +65,7 @@ export function initSocket(httpServer, sessionMiddleware) {
       try {
         const s = await getSettings();
         const { messages, context, onFinish } = await buildPrompt(task, payload, s, user);
-        reply('ai:start', { provider: s.ai.provider });
+        reply('ai:start', { provider: s.ai.geminiApiKey ? 'gemini' : 'local' });
         const full = await streamChat({ messages, task, context, signal: controller.signal, onDelta: (delta) => reply('ai:chunk', { delta }) });
         await onFinish?.(full);
         reply('ai:done', { content: full });
